@@ -46,6 +46,15 @@ export default function LoginPage() {
         >
           Login
         </button>
+
+        <button
+          type="button"
+          onClick={()=> router.push("/register")}
+          className="w-full p-2 bg-gray-200 text-black rounded hover:bg-gray-300 transition rounded-xl cursor-pointer"
+        >
+          Register
+        </button>
+
         {error && <p className="text-red-500">{error}</p>}
       </form>
     </div>
