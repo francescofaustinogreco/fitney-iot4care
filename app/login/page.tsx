@@ -42,7 +42,7 @@ export default function LoginPage() {
         />
         <button
           type="submit"
-          className="w-full p-2 bg-primary-600 text-white rounded hover:bg-blue-700 transition rounded-xl cursor-pointer"
+          className="w-full p-2 bg-primary-600 text-white rounded-xl hover:bg-blue-700 transition rounded-xl cursor-pointer"
         >
           Login
         </button>
