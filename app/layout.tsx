@@ -19,10 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-            <head>
-        <link rel="icon" href="/favicon.ico" />
-      </head>
-      <body className={`${roboto.variable} antialiased`}>
+      <body className={`${roboto.variable} antialiased text-secondary-700`}>
         {children}
       </body>
     </html>
