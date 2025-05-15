@@ -39,7 +39,7 @@ export default function LoginPage() {
           <h1 className="text-5xl font-semibold">Accedi</h1>
           <span>Non sei registrato? </span>
           <Link
-            href="/registrazione"
+            href="/register"
             className="underline text-primary-500 font-bold"
           >
             Registrati
