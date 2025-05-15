@@ -6,8 +6,8 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/firebase";
 import Image from "next/image";
 import Link from "next/link";
-import Input from "../ui/input";
-import Button from "../ui/button";
+import Input from "../ui/Input";
+import Button from "../ui/Button";
 
 export default function LoginPage() {
   const [email, setEmail] = useState<string>("");
@@ -19,7 +19,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
+      router.push("/dashboard/schede");
     } catch (err: any) {
       setError(err.message);
     }

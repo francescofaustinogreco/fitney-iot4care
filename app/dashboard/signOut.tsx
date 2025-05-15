@@ -3,6 +3,7 @@
 import { auth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import Button from "../ui/Button";
 
 
 
@@ -19,8 +20,8 @@ export default function SignOutUser(){
     }
 
     return(
-        <button onClick={handleSignOut} className="bg-white-300 text-yellow">
+        <Button onClick={handleSignOut} className="">
             Sign-Out
-        </button>
+        </Button>
     );
 }
