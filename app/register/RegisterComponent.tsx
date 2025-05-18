@@ -7,8 +7,8 @@ import { auth, db } from "@/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import Image from "next/image";
 import Link from "next/link";
-import Input from "../ui/Input";
-import Button from "../ui/Button";
+import Input from "../ui/input";
+import Button from "../ui/button";
 
 export default function RegisterPage() {
   const [name, setName] = useState<string>("");

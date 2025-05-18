@@ -3,7 +3,7 @@
 import { auth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import Button from "../ui/Button";
+import Button from "../ui/button";
 
 
 
