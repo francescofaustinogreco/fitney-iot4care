@@ -20,6 +20,7 @@ export default function AddClient({onClose}: clientFormModal){
                 età: Number(età),
                 limitazioni,
             });
+            window.location.reload
             onClose();
         }catch(e: any){
             console.log(e.message);
