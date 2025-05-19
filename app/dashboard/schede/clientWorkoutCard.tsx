@@ -1,43 +1,45 @@
-import { collection, addDoc } from "firebase/firestore";
-import { db } from "../../../firebase";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { collection, getDocs, addDoc } from "firebase/firestore";
+import { db } from "@/firebase";
 
-type Exercise = {
-  name: string;
-  sets: string;
-  reps: string;
-  rest: string;
-};
-
-type WorkoutFormModalProps = {
+type Props = {
   onClose: () => void;
 };
 
-export default function WorkoutFormModal({ onClose }: WorkoutFormModalProps) {
-  const [title, setTitle] = useState("");
-  const [exercises, setExercises] = useState<Exercise[]>([
-    { name: "", sets: "", reps: "", rest: "" },
-  ]);
+export default function AddSchedule({ onClose }: Props) {
+  const [clients, setClients] = useState<any[]>([]);
+  const [exercises, setExercises] = useState<any[]>([]);
+  const [selectedClient, setSelectedClient] = useState("");
+  const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
+  const [note, setNote] = useState("");
 
-  type ExerciseField = keyof Exercise;
+  useEffect(() => {
+    const fetchData = async () => {
+      const clientsSnap = await getDocs(collection(db, "clients"));
+      const exercisesSnap = await getDocs(collection(db, "exercises"));
 
-  const handleChangeExercise = (index: number, field: ExerciseField, value: string) => {
-    const updated = [...exercises];
-    updated[index][field] = value;
-    setExercises(updated);
+      setClients(clientsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setExercises(exercisesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    };
+
+    fetchData();
+  }, []);
+
+  const handleExerciseToggle = (id: string) => {
+    setSelectedExercises(prev =>
+      prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]
+    );
   };
 
-  const addExercise = () => {
-    setExercises([...exercises, { name: "", sets: "", reps: "", rest: "" }]);
-  };
-
-  const saveWorkout = async () => {
+  const createSchedule = async () => {
     try {
-      await addDoc(collection(db, "workout_plans"), {
-        title,
-        exercises,
+      await addDoc(collection(db, "schedules"), {
+        clientId: selectedClient,
+        exercises: selectedExercises,
+        note,
       });
       onClose();
+      window.location.reload(); // Può essere tolto se aggiorni la lista dinamicamente
     } catch (e: any) {
       console.log(e.message);
     }
@@ -46,57 +48,55 @@ export default function WorkoutFormModal({ onClose }: WorkoutFormModalProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
       <div className="bg-white p-6 rounded-lg max-w-md w-full">
-        <h2 className="text-xl font-bold mb-4">Crea Scheda Allenamento</h2>
+        <h2 className="text-xl font-bold mb-4">Nuova Scheda</h2>
+
+        <label className="block mb-2">Seleziona Cliente</label>
+        <select
+          value={selectedClient}
+          onChange={(e) => setSelectedClient(e.target.value)}
+          className="border p-2 mb-4 w-full"
+        >
+          <option value="">-- Seleziona --</option>
+          {clients.map((client) => (
+            <option key={client.id} value={client.id}>
+              {client.nome} {client.cognome}
+            </option>
+          ))}
+        </select>
+
+        <label className="block mb-2">Esercizi</label>
+        <div className="max-h-40 overflow-y-scroll border p-2 mb-4">
+          {exercises.map((exercise) => (
+            <label key={exercise.id} className="block">
+              <input
+                type="checkbox"
+                value={exercise.id}
+                checked={selectedExercises.includes(exercise.id)}
+                onChange={() => handleExerciseToggle(exercise.id)}
+                className="mr-2"
+              />
+              {exercise.nome} ({exercise.ripetizioni})
+            </label>
+          ))}
+        </div>
 
         <input
           type="text"
-          placeholder="Titolo"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Note"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
           className="border p-2 mb-4 w-full"
         />
 
-        {exercises.map((ex, i) => (
-          <div key={i} className="mb-2 space-y-1">
-            <input
-              type="text"
-              placeholder="Nome esercizio"
-              value={ex.name}
-              onChange={(e) => handleChangeExercise(i, "name", e.target.value)}
-              className="border p-1 w-full"
-            />
-            <input
-              type="number"
-              placeholder="Serie"
-              value={ex.sets}
-              onChange={(e) => handleChangeExercise(i, "sets", e.target.value)}
-              className="border p-1 w-full"
-            />
-            <input
-              type="number"
-              placeholder="Ripetizioni"
-              value={ex.reps}
-              onChange={(e) => handleChangeExercise(i, "reps", e.target.value)}
-              className="border p-1 w-full"
-            />
-            <input
-              type="text"
-              placeholder="Recupero (es. 90s)"
-              value={ex.rest}
-              onChange={(e) => handleChangeExercise(i, "rest", e.target.value)}
-              className="border p-1 w-full"
-            />
-          </div>
-        ))}
-
-        <button onClick={addExercise} className="bg-blue-500 text-white px-3 py-1 rounded mt-2">
-          + Aggiungi esercizio
-        </button>
-
-        <div className="mt-4 flex justify-between">
-          <button onClick={onClose} className="text-gray-500">Annulla</button>
-          <button onClick={saveWorkout} className="bg-green-600 text-white px-4 py-2 rounded">
-            Salva scheda
+        <div className="flex justify-between">
+          <button onClick={onClose} className="text-gray-500">
+            Annulla
+          </button>
+          <button
+            onClick={createSchedule}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            Crea Scheda
           </button>
         </div>
       </div>
