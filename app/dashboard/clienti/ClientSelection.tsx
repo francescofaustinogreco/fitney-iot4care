@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/firebase";
 import { Trash } from "lucide-react";
+import { getAuth } from "firebase/auth";
 
 type Client = {
   id: string;
   nome: string;
   cognome: string;
   età: number;
+  trainerId: string; 
   limitazioni?: boolean;
 };
 
@@ -19,11 +21,26 @@ export default function ClientSelection() {
   useEffect(() => {
     const fetchClients = async () => {
       try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+
+        if (!user) {
+          console.warn("Utente non loggato.");
+          return;
+        }
+
         const querySnapshot = await getDocs(collection(db, "clients"));
-        const clientsArray = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Client[];
+
+        const clientsArray = querySnapshot.docs
+          .map((doc) => {
+            const data = doc.data() as Omit<Client, "id">;
+            return {
+              id: doc.id,
+              ...data,
+            };
+          })
+          .filter((client) => client.trainerId === user.uid); 
+
         setClients(clientsArray);
       } catch (error) {
         console.error("Errore nel recupero dei clienti:", error);

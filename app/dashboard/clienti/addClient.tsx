@@ -6,6 +6,7 @@ import { db } from "../../../firebase";
 import Input from "../../ui/input";
 import Button from "../../ui/button";
 import { X } from "lucide-react";
+import { getAuth } from "firebase/auth";
 
 
 type ClientFormModalProps = {
@@ -21,11 +22,20 @@ export default function AddClient({ onClose }: ClientFormModalProps) {
 
   const addClientLogic = async () => {
     try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if(!user){
+          alert("Devi essere loggato per aggiungere un cliente!");
+          return;
+      }
+
       await addDoc(collection(db, "clients"), {
         nome,
         cognome,
         età: Number(età),
         limitazioni,
+        trainerId: user?.uid,
       });
       onClose();
     } catch (e: any) {
