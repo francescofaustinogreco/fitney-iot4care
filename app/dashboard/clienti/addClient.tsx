@@ -1,80 +1,92 @@
+"use client";
+
 import { useState } from "react";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../../../firebase";
+import Input from "../../ui/input";
+import Button from "../../ui/button";
+import { X } from "lucide-react";
 
-type clientFormModal = {
-    onClose: () => void;
-}
 
-export default function AddClient({onClose}: clientFormModal){
-    const [nome, setNome] = useState("");
-    const [cognome, setCognome] = useState("");
-    const [età, setEtà] = useState("");
-    const [limitazioni, setLimitazioni] = useState(false);
+type ClientFormModalProps = {
+  onClose: () => void;
+};
 
-    const addClientLogic = async () => {
-        try{
-            await addDoc(collection(db, "clients"),{
-                nome,
-                cognome,
-                età: Number(età),
-                limitazioni,
-            });
-            onClose();
-        }catch(e: any){
-            console.log(e.message);
-        }
+export default function AddClient({ onClose }: ClientFormModalProps) {
+  const [nome, setNome] = useState("");
+  const [cognome, setCognome] = useState("");
+  const [età, setEtà] = useState("");
+  const [limitazioni, setLimitazioni] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const addClientLogic = async () => {
+    try {
+      await addDoc(collection(db, "clients"), {
+        nome,
+        cognome,
+        età: Number(età),
+        limitazioni,
+      });
+      onClose();
+    } catch (e: any) {
+      setError("Errore durante il salvataggio: " + e.message);
     }
+  };
 
-    return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-      <div className="bg-white p-6 rounded-lg max-w-md w-full">
-        <h2 className="text-xl font-bold mb-4">Aggiungi Cliente</h2>
+  return (
+    <div className="fixed inset-0 bg-secondary-800/30 backdrop-blur-sm flex justify-center items-center z-50">
+      <div className="relative bg-white px-6 py-10 border-4 border-primary-500 rounded-sm max-w-sm w-full">
+        {/* X in alto a destra */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-secondary-500 hover:text-secondary-800 cursor-pointer"
+          aria-label="Chiudi"
+        >
+          <X size={20} />{" "}
+        </button>
 
-        <input
-          type="text"
-          placeholder="Nome"
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          className="border p-2 mb-2 w-full"
-        />
+        <h2 className="text-3xl font-semibold mb-6 text-center">
+          Aggiungi Cliente
+        </h2>
 
-        <input
-          type="text"
-          placeholder="Cognome"
-          value={cognome}
-          onChange={(e) => setCognome(e.target.value)}
-          className="border p-2 mb-2 w-full"
-        />
-
-        <input
-          type="text"
-          placeholder="Età"
-          value={età}
-          onChange={(e) => setEtà(e.target.value)}
-          className="border p-2 mb-2 w-full"
-        />
-
-        <label className="flex items-center mb-4">
-          <input
-            type="checkbox"
-            checked={limitazioni}
-            onChange={(e) => setLimitazioni(e.target.checked)}
-            className="mr-2"
+        <div className="space-y-3">
+          <Input
+            type="text"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            placeholder="Nome"
+            required
           />
-          Limitazioni fisiche?
-        </label>
+          <Input
+            type="text"
+            value={cognome}
+            onChange={(e) => setCognome(e.target.value)}
+            placeholder="Cognome"
+            required
+          />
+          <Input
+            type="number"
+            value={età}
+            onChange={(e) => setEtà(e.target.value)}
+            placeholder="Età"
+            required
+          />
 
-        <div className="flex justify-between">
-          <button onClick={onClose} className="text-gray-500">
-            Annulla
-          </button>
-          <button
-            onClick={addClientLogic}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Salva Cliente
-          </button>
+          <label className="flex items-center space-x-2 text-sm">
+            <input
+              type="checkbox"
+              checked={limitazioni}
+              onChange={(e) => setLimitazioni(e.target.checked)}
+              className="accent-primary-500"
+            />
+            <span>Limitazioni fisiche?</span>
+          </label>
+
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <Button onClick={addClientLogic}>Salva Cliente</Button>
         </div>
       </div>
     </div>

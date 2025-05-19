@@ -5,41 +5,40 @@ import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/firebase";
 import { Trash } from "lucide-react";
 
-type Client = {
+type Exercise = {
   id: string;
   nome: string;
-  cognome: string;
-  età: number;
-  limitazioni?: boolean;
+  difficoltà: "bassa" | "media" | "alta";
+  note?: string;
 };
 
-export default function ClientSelection() {
-  const [clients, setClients] = useState<Client[]>([]);
+export default function ExerciseSelection() {
+  const [exercises, setExercises] = useState<Exercise[]>([]);
 
   useEffect(() => {
-    const fetchClients = async () => {
+    const fetchExercises = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "clients"));
-        const clientsArray = querySnapshot.docs.map((doc) => ({
+        const querySnapshot = await getDocs(collection(db, "exercises"));
+        const exercisesArray = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
-        })) as Client[];
-        setClients(clientsArray);
+        })) as Exercise[];
+        setExercises(exercisesArray);
       } catch (error) {
-        console.error("Errore nel recupero dei clienti:", error);
+        console.error("Errore nel recupero degli esercizi:", error);
       }
     };
 
-    fetchClients();
+    fetchExercises();
   }, []);
 
   const handleDelete = async (id: string) => {
-    const confirmDelete = confirm("Sei sicuro di voler eliminare questo cliente?");
+    const confirmDelete = confirm("Sei sicuro di voler eliminare questo esercizio?");
     if (!confirmDelete) return;
 
     try {
-      await deleteDoc(doc(db, "clients", id));
-      setClients((prev) => prev.filter((client) => client.id !== id));
+      await deleteDoc(doc(db, "exercises", id));
+      setExercises((prev) => prev.filter((exercise) => exercise.id !== id));
     } catch (error) {
       console.error("Errore durante l'eliminazione:", error);
     }
@@ -51,28 +50,28 @@ export default function ClientSelection() {
         <thead className="bg-secondary-100">
           <tr>
             <th className="px-6 py-3 text-left text-sm font-bold">Nome</th>
-            <th className="px-6 py-3 text-left text-sm font-bold">Cognome</th>
-            <th className="px-6 py-3 text-left text-sm font-bold">Età</th>
+            <th className="px-6 py-3 text-left text-sm font-bold">Difficoltà</th>
+            <th className="px-6 py-3 text-left text-sm font-bold">Note</th>
             <th className="px-6 py-3 text-left text-sm font-bold">Azioni</th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-secondary-200">
-          {clients.map((client) => (
-            <tr key={client.id} className="hover:bg-secondary-50 transition">
+          {exercises.map((exercise) => (
+            <tr key={exercise.id} className="hover:bg-secondary-50 transition">
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {client.nome}
+                {exercise.nome}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
+                {exercise.difficoltà}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {client.cognome}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {client.età}
+                {exercise.note || "-"}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 <button
-                  onClick={() => handleDelete(client.id)}
-                  className="hover:text-secondary-800 transition cursor-pointer"
-                  aria-label="Elimina cliente"
+                  onClick={() => handleDelete(exercise.id)}
+                  className="hover:text-red-600 transition"
+                  aria-label="Elimina esercizio"
                 >
                   <Trash className="w-5 h-5" />
                 </button>
