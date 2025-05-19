@@ -44,6 +44,8 @@ export default function Schede() {
             </button>
           </div>
           {showModal && <AddClient onClose={() => setShowModal(false)} />}
+
+
           <ClientSelection />
         </div>
       </div>
