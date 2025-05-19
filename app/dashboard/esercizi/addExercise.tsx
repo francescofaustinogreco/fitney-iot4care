@@ -1,90 +1,85 @@
+"use client";
+
 import { useState } from "react";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "@/firebase";
+import Input from "../../ui/input";
+import Button from "../../ui/button";
+import { X } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
-type clientFormModal = {
-    onClose: () => void;
-}
+type ExerciseFormModalProps = {
+  onClose: () => void;
+};
 
-export default function AddExercise({onClose}: clientFormModal){
-    const [nome, setNome] = useState("");
-    const [ripetizioni, setRipetizioni] = useState("");
-    const [reps, setReps] = useState("");
-    const [difficoltà, setDifficoltà] = useState("");
-    const [note, setNote] = useState("");
+export default function AddExercise({ onClose }: ExerciseFormModalProps) {
+  const [nome, setNome] = useState("");
+  const [difficoltà, setDifficoltà] = useState("bassa");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-    const addExerciseLogic = async () => {
-        try{
-            await addDoc(collection(db, "exercises"),{
-                nome,
-                ripetizioni,
-                reps,
-                difficoltà,
-                note,
-            });
-            window.location.reload();
-            onClose();
-        }catch(e: any){
-            console.log(e.message);
-        }
+  const addExerciseLogic = async () => {
+    try {
+      await addDoc(collection(db, "exercises"), {
+        nome,
+        difficoltà,
+        note,
+      });
+      onClose();
+    } catch (e: any) {
+      setError("Errore durante il salvataggio: " + e.message);
     }
+  };
 
-    return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-      <div className="bg-white p-6 rounded-lg max-w-md w-full">
-        <h2 className="text-xl font-bold mb-4">Aggiungi Esercizio</h2>
+  return (
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50">
+      <div className="relative bg-white px-6 py-10 border-4 border-primary-500 rounded-sm max-w-sm w-full">
+        {/* X per chiudere */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 cursor-pointer"
+        >
+          <X size={25} />
+        </button>
 
-        <input
-          type="text"
-          placeholder="Nome Esercizio"
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          className="border p-2 mb-2 w-full"
-        />
+        <h2 className="text-3xl font-semibold mb-6 text-center">
+          Aggiungi Esercizio
+        </h2>
 
-        <input
-          type="text"
-          placeholder="Reps"
-          value={reps}
-          onChange={(e) => setReps(e.target.value)}
-          className="border p-2 mb-2 w-full"
-        />
+        <div className="space-y-3">
+          <Input
+            type="text"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            placeholder="Nome Esercizio"
+            required
+          />
 
-        <input
-          type="text"
-          placeholder="Ripetizioni"
-          value={ripetizioni}
-          onChange={(e) => setRipetizioni(e.target.value)}
-          className="border p-2 mb-2 w-full"
-        />
+          <div className="relative w-full">
+            <select
+              value={difficoltà}
+              onChange={(e) => setDifficoltà(e.target.value)}
+              className="appearance-none h-[54px] px-4 pr-10 w-full border text-lg bg-secondary-50 border-secondary-300 placeholder-secondary-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-150"
+            >
+              <option value="bassa" className="">Bassa</option>
+              <option value="media">Media</option>
+              <option value="alta">Alta</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-secondary-400" />
+          </div>
 
+          <Input
+            type="text"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Note"
+          />
 
-        <input
-          type="text"
-          placeholder="Difficoltà"
-          value={difficoltà}
-          onChange={(e) => setDifficoltà(e.target.value)}
-          className="border p-2 mb-2 w-full"
-        />
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+        </div>
 
-        <input
-          type="text"
-          placeholder="Note"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          className="border p-2 mb-2 w-full"
-        />
-
-        <div className="flex justify-between">
-          <button onClick={onClose} className="text-gray-500">
-            Annulla
-          </button>
-          <button
-            onClick={addExerciseLogic}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Salva Cliente
-          </button>
+        <div className="mt-6 flex justify-end">
+          <Button onClick={addExerciseLogic}>Salva Esercizio</Button>
         </div>
       </div>
     </div>
