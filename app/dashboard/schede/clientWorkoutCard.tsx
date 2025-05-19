@@ -39,7 +39,7 @@ export default function AddSchedule({ onClose }: Props) {
         note,
       });
       onClose();
-      window.location.reload(); // Può essere tolto se aggiorni la lista dinamicamente
+      window.location.reload(); 
     } catch (e: any) {
       console.log(e.message);
     }
