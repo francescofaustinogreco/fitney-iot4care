@@ -8,7 +8,7 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "Fitney - Accedi",
+  title: "Accedi - Fitney",
   description: "Gestionale per Personal Trainer",
 };
 
@@ -19,6 +19,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link
+          href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+          rel="stylesheet"
+        ></link>
+      </head>
       <body className={`${roboto.variable} antialiased text-secondary-700`}>
         {children}
       </body>

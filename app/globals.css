@@ -25,3 +25,8 @@
     --color-secondary-800: #1f1f1f;
     --color-secondary-900: #121212;
 }
+
+#__next-route-announcer,
+[data-nextjs-dev-overlay] {
+  display: none !important;
+}

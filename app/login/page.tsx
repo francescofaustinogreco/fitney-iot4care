@@ -19,7 +19,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
+      router.push("/dashboard/schede");
     } catch (err: any) {
       setError(err.message);
     }
