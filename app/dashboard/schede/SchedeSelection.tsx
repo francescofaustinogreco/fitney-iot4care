@@ -17,6 +17,10 @@ export default function SchedeSelection() {
   const [editingSchedule, setEditingSchedule] = useState<any | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
+  // 👇 Nuovo stato per il modale di visualizzazione
+  const [selectedSchedule, setSelectedSchedule] = useState<any | null>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+
   const [formData, setFormData] = useState({
     note: "",
     exercises: [] as string[],
@@ -93,42 +97,83 @@ export default function SchedeSelection() {
 
   return (
     <div className="mt-4">
-      <table className="min-w-full divide-y divide-secondary-200 rounded-xl shadow-md overflow-hidden">
-        <thead className="bg-secondary-100">
-          <tr>
-            <th className="px-6 py-3 text-left text-sm font-bold">Cliente</th>
-            <th className="px-6 py-3 text-left text-sm font-bold">Esercizi</th>
-            <th className="px-6 py-3 text-left text-sm font-bold">Note</th>
-            <th className="px-6 py-3 text-left text-sm font-bold">Azioni</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-secondary-200">
-          {schedules.map((s) => (
-            <tr key={s.id} className="hover:bg-secondary-50 transition">
-              <td className="px-6 py-4 text-sm">{s.clientId}</td>
-              <td className="px-6 py-4 text-sm">
-                {Array.isArray(s.exercises) ? s.exercises.join(", ") : "-"}
-              </td>
-              <td className="px-6 py-4 text-sm">{s.note || "-"}</td>
-              <td className="px-6 py-4 text-sm flex gap-2">
-                <button
-                  onClick={() => handleEditClick(s)}
-                  className="hover:text-secondary-700 cursor-pointer"
-                >
-                  <Pencil className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(s.id)}
-                  className="hover:text-red-500 cursor-pointer"
-                >
-                  <Trash className="w-5 h-5" />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Grid */}
+      <div className="grid grid-cols-4 gap-4">
+        {schedules.map((s) => (
+          <div
+            key={s.id}
+            onClick={() => {
+              setSelectedSchedule(s);
+              setViewModalOpen(true);
+            }}
+            className="cursor-pointer max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
+          >
+            <h5 className="mb-2 text-lg font-bold tracking-tight text-gray-900 dark:text-white truncate">
+              {s.clientId}
+            </h5>
+            <p className="mb-3 font-normal text-gray-700 dark:text-gray-400 truncate">
+              {Array.isArray(s.exercises) ? s.exercises.join(", ") : "-"}
+            </p>
+          </div>
+        ))}
+      </div>
 
+      {viewModalOpen && selectedSchedule && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50">
+          <div className="relative bg-white p-6 rounded-sm shadow-md border-2 border-primary-500 w-full max-w-md dark:bg-gray-800 dark:border-gray-700">
+            <button
+              onClick={() => {
+                setViewModalOpen(false);
+                setSelectedSchedule(null);
+              }}
+              className="absolute top-3 right-3 text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+
+            <h2 className="text-xl font-semibold text-slate-800 dark:text-white mb-4">
+              Dettagli Scheda
+            </h2>
+
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+              <strong>Cliente:</strong> {selectedSchedule.clientId}
+            </p>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+              <strong>Esercizi:</strong>{" "}
+              {Array.isArray(selectedSchedule.exercises)
+                ? selectedSchedule.exercises.join(", ")
+                : "-"}
+            </p>
+
+            {/* Azioni */}
+            <div className="flex justify-end gap-4 mt-6">
+              <button
+                onClick={() => {
+                  setViewModalOpen(false); // chiude il modale visivo
+                  handleEditClick(selectedSchedule); // apre quello di modifica
+                }}
+                className="flex items-center gap-2 text-sm -600 font-medium cursor-pointer"
+              >
+                <Pencil size={16} />
+                Modifica
+              </button>
+
+              <button
+                onClick={() => {
+                  setViewModalOpen(false);
+                  handleDelete(selectedSchedule.id);
+                }}
+                className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800 font-medium cursor-pointer"
+              >
+                <Trash size={16} />
+                Elimina
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale modifica scheda */}
       {modalOpen && (
         <div className="fixed inset-0 bg-secondary-800/30 backdrop-blur-sm flex justify-center items-center z-50">
           <div className="relative bg-white px-6 py-10 border-4 border-primary-500 rounded-sm max-w-sm w-full">

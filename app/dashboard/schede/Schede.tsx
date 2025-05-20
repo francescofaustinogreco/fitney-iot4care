@@ -58,7 +58,6 @@ export default function Schede() {
           )}
         </div>
 
-        {/* Sezione Visualizzazione + Bottone Aggiungi */}
         <div className="mt-10 w-3/4">
           <div className="flex w-full justify-between items-center border-b border-secondary-100 pb-2">
             <h3 className="text-xl font-semibold">Visualizzazione Schede</h3>
