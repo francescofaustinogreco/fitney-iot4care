@@ -43,7 +43,6 @@ export default function Schede() {
     <div className="">
       <Sidebar />
       <div className="ml-[20%] w-full p-12">
-        {/* Header con benvenuto */}
         <div className="w-3/4 border-b border-secondary-100 pb-4">
           <span className="text-[70px]">💪</span>
           <h1 className="text-4xl font-bold mt-6">
@@ -69,10 +68,8 @@ export default function Schede() {
             </button>
           </div>
 
-          {/* Modale per Aggiunta Scheda */}
           {showModal && <AddSchedule onClose={() => setShowModal(false)} />}
 
-          {/* Lista Schede */}
           <SchedeSelection />
         </div>
       </div>

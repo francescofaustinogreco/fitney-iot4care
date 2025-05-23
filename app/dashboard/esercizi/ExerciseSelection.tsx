@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { collection, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { db } from "@/firebase";
-import { X,Trash, Pencil } from "lucide-react";
+import { X, Trash, Pencil } from "lucide-react";
 import Input from "@/app/ui/input";
 
 type Exercise = {
@@ -11,14 +12,14 @@ type Exercise = {
   nome: string;
   difficoltà: string;
   note?: string;
+  trainerId?: string;
 };
 
-export default function ExerciseList() {
+export default function ExerciseSelection() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-
-  const [formData, setFormData] = useState({
+  const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
+  const [formData, setFormData] = useState<Pick<Exercise, "nome" | "difficoltà" | "note">>({
     nome: "",
     difficoltà: "",
     note: "",
@@ -27,11 +28,26 @@ export default function ExerciseList() {
   useEffect(() => {
     const fetchExercises = async () => {
       try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+
+        if (!user) {
+          console.warn("Utente non loggato.");
+          return;
+        }
+
         const querySnapshot = await getDocs(collection(db, "exercises"));
-        const exercisesArray = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Exercise[];
+
+        const exercisesArray = querySnapshot.docs
+          .map((doc) => {
+            const data = doc.data() as Omit<Exercise, "id">;
+            return {
+              id: doc.id,
+              ...data,
+            };
+          })
+          .filter((exercise) => exercise.trainerId === user.uid);
+
         setExercises(exercisesArray);
       } catch (error) {
         console.error("Errore nel recupero degli esercizi:", error);
@@ -47,7 +63,7 @@ export default function ExerciseList() {
 
     try {
       await deleteDoc(doc(db, "exercises", id));
-      setExercises((prev) => prev.filter((ex) => ex.id !== id));
+      setExercises((prev) => prev.filter((exercise) => exercise.id !== id));
     } catch (error) {
       console.error("Errore durante l'eliminazione:", error);
     }
@@ -63,7 +79,9 @@ export default function ExerciseList() {
     setModalOpen(true);
   };
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleFormChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -127,74 +145,73 @@ export default function ExerciseList() {
 
       {/* Modale */}
       {modalOpen && (
-  <div className="fixed inset-0 bg-secondary-800/30 backdrop-blur-sm flex justify-center items-center z-50">
-    <div className="relative bg-white px-6 py-8 border-4 border-primary-500 rounded-sm max-w-sm w-full">
-      {/* Bottone "X" per chiudere */}
-      <button
-        onClick={() => {
-          setModalOpen(false);
-          setEditingExercise(null);
-        }}
-        className="absolute top-3 right-3 text-secondary-500 hover:text-secondary-800 cursor-pointer"
-        aria-label="Chiudi"
-      >
-        <X size={20} />
-      </button>
+        <div className="fixed inset-0 bg-secondary-800/30 backdrop-blur-sm flex justify-center items-center z-50">
+          <div className="relative bg-white px-6 py-8 border-4 border-primary-500 rounded-sm max-w-sm w-full">
+            <button
+              onClick={() => {
+                setModalOpen(false);
+                setEditingExercise(null);
+              }}
+              className="absolute top-3 right-3 text-secondary-500 hover:text-secondary-800 cursor-pointer"
+              aria-label="Chiudi"
+            >
+              <X size={20} />
+            </button>
 
-      <h2 className="text-2xl font-semibold mb-6 text-center">
-        Modifica Esercizio
-      </h2>
+            <h2 className="text-2xl font-semibold mb-6 text-center">
+              Modifica Esercizio
+            </h2>
 
-      <div className="space-y-3">
-        <Input
-          type="text"
-          name="nome"
-          value={formData.nome}
-          onChange={handleFormChange}
-          placeholder="Nome"
-          className="w-full border border-secondary-300 rounded px-4 py-2 text-base placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
-        />
-        <select
-          name="difficoltà"
-          value={formData.difficoltà}
-          onChange={handleFormChange}
-          className="appearance-none h-[54px] px-4 pr-10 w-full border text-lg bg-secondary-50 border-secondary-300 placeholder-secondary-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-150"
-        >
-          <option value="">Seleziona difficoltà</option>
-          <option value="bassa">Bassa</option>
-          <option value="media">Media</option>
-          <option value="alta">Alta</option>
-        </select>
-        <textarea
-          name="note"
-          value={formData.note}
-          onChange={handleFormChange}
-          placeholder="Note"
-          className="w-full border text-lg bg-secondary-50 border-secondary-300 rounded px-4 py-2 placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition resize-none"
-          rows={4}
-        />
-      </div>
+            <div className="space-y-3">
+              <Input
+                type="text"
+                name="nome"
+                value={formData.nome}
+                onChange={handleFormChange}
+                placeholder="Nome"
+                className="w-full border border-secondary-300 rounded px-4 py-2 text-base placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
+              />
+              <select
+                name="difficoltà"
+                value={formData.difficoltà}
+                onChange={handleFormChange}
+                className="appearance-none h-[54px] px-4 pr-10 w-full border text-lg bg-secondary-50 border-secondary-300 placeholder-secondary-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-150"
+              >
+                <option value="">Seleziona difficoltà</option>
+                <option value="bassa">Bassa</option>
+                <option value="media">Media</option>
+                <option value="alta">Alta</option>
+              </select>
+              <textarea
+                name="note"
+                value={formData.note}
+                onChange={handleFormChange}
+                placeholder="Note"
+                className="w-full border text-lg bg-secondary-50 border-secondary-300 rounded px-4 py-2 placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition resize-none"
+                rows={4}
+              />
+            </div>
 
-      <div className="mt-6 flex justify-end space-x-4">
-        <button
-          onClick={() => {
-            setModalOpen(false);
-            setEditingExercise(null);
-          }}
-          className="px-4 py-2 bg-gray-200 rounded-sm hover:bg-gray-300 text-base font-semibold transition cursor-pointer"
-        >
-          Annulla
-        </button>
-        <button
-          onClick={handleSave}
-          className="px-4 py-2 bg-primary-500 text-white rounded-sm hover:bg-primary-600 text-base font-semibold transition cursor-pointer"
-        >
-          Salva
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+            <div className="mt-6 flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  setModalOpen(false);
+                  setEditingExercise(null);
+                }}
+                className="px-4 py-2 bg-gray-200 rounded-sm hover:bg-gray-300 text-base font-semibold transition cursor-pointer"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 bg-primary-500 text-white rounded-sm hover:bg-primary-600 text-base font-semibold transition cursor-pointer"
+              >
+                Salva
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,14 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs, addDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "@/firebase";
 import Input from "../../ui/input";
 import Button from "../../ui/button";
 import { X } from "lucide-react";
+import { getAuth } from "firebase/auth";
 
 type Props = {
   onClose: () => void;
+  trainerId?: string,
 };
 
 export default function AddSchedule({ onClose }: Props) {
@@ -20,44 +28,66 @@ export default function AddSchedule({ onClose }: Props) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const clientsSnap = await getDocs(collection(db, "clients"));
-      const exercisesSnap = await getDocs(collection(db, "exercises"));
+      const auth = getAuth();
+      const user = auth.currentUser;
 
-      setClients(
-        clientsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-      );
-      setExercises(
-        exercisesSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-      );
+      if (!user) {
+        console.warn("Utente non loggato!");
+        return;
+      }
+
+      const trainerId = user.uid;
+
+      // Fetch tutti i clienti
+      const clientsSnap = await getDocs(collection(db, "clients"));
+      const clientsArray = clientsSnap.docs
+        .map(doc => ({ ...(doc.data() as { trainerId: string; nome: string; cognome: string }), id: doc.id }))
+        .filter(client => client.trainerId === trainerId);
+      setClients(clientsArray);
+
+      // Fetch tutti gli esercizi e poi filtra
+      const exercisesSnap = await getDocs(collection(db, "exercises"));
+      const exercisesArray = exercisesSnap.docs
+        .map(doc => ({ id: doc.id, ...(doc.data() as { trainerId: string; nome: string }) }))
+        .filter(exercise => exercise.trainerId === trainerId);
+      setExercises(exercisesArray);
     };
 
     fetchData();
   }, []);
 
   const handleExerciseToggle = (id: string) => {
-    setSelectedExercises((prev) =>
-      prev.includes(id) ? prev.filter((e) => e !== id) : [...prev, id]
+    setSelectedExercises(prev =>
+      prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]
     );
   };
 
   const createSchedule = async () => {
     try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (!user) {
+        console.warn("Utente non loggato!");
+        return;
+      }
+
       await addDoc(collection(db, "schedules"), {
         clientId: selectedClient,
         exercises: selectedExercises,
         note,
+        trainerId: user.uid,
       });
+
       onClose();
       window.location.reload();
     } catch (e: any) {
       console.log(e.message);
     }
   };
-
   return (
     <div className="fixed inset-0 bg-secondary-800/30 backdrop-blur-sm flex justify-center items-center z-50">
       <div className="relative bg-white px-6 py-10 border-4 border-primary-500 rounded-sm max-w-sm w-full">
-        {/* Bottone X */}
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-secondary-500 hover:text-secondary-800 cursor-pointer"
@@ -100,9 +130,7 @@ export default function AddSchedule({ onClose }: Props) {
                   onChange={() => handleExerciseToggle(exercise.id)}
                   className="accent-primary-500"
                 />
-                <span>
-                  {exercise.nome}
-                </span>
+                <span>{exercise.nome}</span>
               </label>
             ))}
           </div>

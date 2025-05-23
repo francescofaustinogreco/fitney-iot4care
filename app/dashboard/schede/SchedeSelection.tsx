@@ -11,13 +11,14 @@ import {
 import { db } from "@/firebase";
 import { X, Trash, Pencil } from "lucide-react";
 import Input from "@/app/ui/input";
+import { getAuth } from "firebase/auth";
 
 export default function SchedeSelection() {
   const [schedules, setSchedules] = useState<any[]>([]);
+  const [clientsMap, setClientsMap] = useState<{ [id: string]: string }>({});
+  const [exerciseMap, setExerciseMap] = useState<{ [id: string]: string }>({});
   const [editingSchedule, setEditingSchedule] = useState<any | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-
-  // 👇 Nuovo stato per il modale di visualizzazione
   const [selectedSchedule, setSelectedSchedule] = useState<any | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
 
@@ -27,20 +28,49 @@ export default function SchedeSelection() {
   });
 
   useEffect(() => {
-    const fetchSchedules = async () => {
+    const fetchData = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "schedules"));
-        const schedulesArray = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const auth = getAuth();
+        const user = auth.currentUser;
+
+        if (!user) {
+          console.warn("Utente non loggato!");
+          return;
+        }
+        const trainer = user?.uid;
+
+        const schedulesSnapshot = await getDocs(collection(db, "schedules"));
+        const clientsSnapshot = await getDocs(collection(db, "clients"));
+        const exerciseSnapshot = await getDocs(collection(db, "exercises"));
+
+        const clientsData: { [id: string]: string } = {};
+        clientsSnapshot.forEach((doc) => {
+          const data = doc.data();
+          clientsData[doc.id] = `${data.nome} ${data.cognome}`;
+        });
+        setClientsMap(clientsData);
+
+        const exerciseData: { [id: string]: string } = {};
+        exerciseSnapshot.forEach((doc) => {
+          const data = doc.data();
+          exerciseData[doc.id] = data.nome;
+        });
+        setExerciseMap(exerciseData);
+
+        const schedulesArray = schedulesSnapshot.docs
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+          .filter((s: any) => s.trainerId === trainer);
+
         setSchedules(schedulesArray);
       } catch (error) {
-        console.error("Errore nel recupero delle schede:", error);
+        console.error("Errore nel recupero dei dati:", error);
       }
     };
 
-    fetchSchedules();
+    fetchData();
   }, []);
 
   const handleDelete = async (id: string) => {
@@ -72,6 +102,15 @@ export default function SchedeSelection() {
     }));
   };
 
+  const handleExerciseToggle = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      exercises: prev.exercises.includes(id)
+        ? prev.exercises.filter((e) => e !== id)
+        : [...prev.exercises, id],
+    }));
+  };
+
   const handleSave = async () => {
     if (!editingSchedule) return;
 
@@ -97,7 +136,6 @@ export default function SchedeSelection() {
 
   return (
     <div className="mt-4">
-      {/* Grid */}
       <div className="grid grid-cols-4 gap-4">
         {schedules.map((s) => (
           <div
@@ -106,13 +144,15 @@ export default function SchedeSelection() {
               setSelectedSchedule(s);
               setViewModalOpen(true);
             }}
-            className="cursor-pointer max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
+            className="cursor-pointer max-w-sm p-6 bg-red-500 border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
           >
             <h5 className="mb-2 text-lg font-bold tracking-tight text-gray-900 dark:text-white truncate">
-              {s.clientId}
+              {clientsMap[s.clientId] || s.clientId}
             </h5>
             <p className="mb-3 font-normal text-gray-700 dark:text-gray-400 truncate">
-              {Array.isArray(s.exercises) ? s.exercises.join(", ") : "-"}
+              {Array.isArray(s.exercises)
+                ? s.exercises.map((id: string) => exerciseMap[id] || id).join(", ")
+                : "-"}
             </p>
           </div>
         ))}
@@ -136,21 +176,21 @@ export default function SchedeSelection() {
             </h2>
 
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-              <strong>Cliente:</strong> {selectedSchedule.clientId}
+              <strong>Cliente:</strong>{" "}
+              {clientsMap[selectedSchedule.clientId] || selectedSchedule.clientId}
             </p>
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
               <strong>Esercizi:</strong>{" "}
               {Array.isArray(selectedSchedule.exercises)
-                ? selectedSchedule.exercises.join(", ")
+                ? selectedSchedule.exercises.map((id: string) => exerciseMap[id] || id).join(", ")
                 : "-"}
             </p>
 
-            {/* Azioni */}
             <div className="flex justify-end gap-4 mt-6">
               <button
                 onClick={() => {
-                  setViewModalOpen(false); // chiude il modale visivo
-                  handleEditClick(selectedSchedule); // apre quello di modifica
+                  setViewModalOpen(false);
+                  handleEditClick(selectedSchedule);
                 }}
                 className="flex items-center gap-2 text-sm -600 font-medium cursor-pointer"
               >
@@ -173,7 +213,6 @@ export default function SchedeSelection() {
         </div>
       )}
 
-      {/* Modale modifica scheda */}
       {modalOpen && (
         <div className="fixed inset-0 bg-secondary-800/30 backdrop-blur-sm flex justify-center items-center z-50">
           <div className="relative bg-white px-6 py-10 border-4 border-primary-500 rounded-sm max-w-sm w-full">
@@ -200,6 +239,22 @@ export default function SchedeSelection() {
                 onChange={handleFormChange}
                 placeholder="Note"
               />
+
+              <div>
+                <h3 className="text-base font-semibold mb-2">Esercizi</h3>
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                  {Object.entries(exerciseMap).map(([id, nome]) => (
+                    <label key={id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={formData.exercises.includes(id)}
+                        onChange={() => handleExerciseToggle(id)}
+                      />
+                      {nome}
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="mt-6 flex justify-end space-x-4">

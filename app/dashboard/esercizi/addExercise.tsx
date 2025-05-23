@@ -7,6 +7,7 @@ import Input from "../../ui/input";
 import Button from "../../ui/button";
 import { X } from "lucide-react";
 import { ChevronDown } from "lucide-react";
+import { getAuth } from "firebase/auth";
 
 type ExerciseFormModalProps = {
   onClose: () => void;
@@ -20,10 +21,19 @@ export default function AddExercise({ onClose }: ExerciseFormModalProps) {
 
   const addExerciseLogic = async () => {
     try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if(!user){
+        console.warn("Utente non loggato.")
+        return;
+      }
+
       await addDoc(collection(db, "exercises"), {
         nome,
         difficoltà,
         note,
+        trainerId: user?.uid,
       });
       onClose();
     } catch (e: any) {
