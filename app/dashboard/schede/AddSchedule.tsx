@@ -17,6 +17,7 @@ export default function AddSchedule({ onClose }: Props) {
   const [selectedClient, setSelectedClient] = useState("");
   const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
   const [note, setNote] = useState("");
+  const [day, setDay] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,6 +47,7 @@ export default function AddSchedule({ onClose }: Props) {
         clientId: selectedClient,
         exercises: selectedExercises,
         note,
+        day,
       });
       onClose();
       window.location.reload();
@@ -88,6 +90,24 @@ export default function AddSchedule({ onClose }: Props) {
           </select>
 
           <label className="text-sm font-medium text-secondary-700">
+            Giorno della settimana
+          </label>
+          <select
+            value={day}
+            onChange={(e) => setDay(e.target.value)}
+            className="appearance-none h-[54px] px-4 pr-10 w-full border text-lg bg-secondary-50 border-secondary-300 placeholder-secondary-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-150"
+          >
+            <option value="">-- Seleziona --</option>
+            <option value="Lunedì">Lunedì</option>
+            <option value="Martedì">Martedì</option>
+            <option value="Mercoledì">Mercoledì</option>
+            <option value="Giovedì">Giovedì</option>
+            <option value="Venerdì">Venerdì</option>
+            <option value="Sabato">Sabato</option>
+            <option value="Domenica">Domenica</option>
+          </select>
+
+          <label className="text-sm font-medium text-secondary-700">
             Esercizi
           </label>
           <div className="max-h-40 overflow-y-auto border bg-secondary-50 border-secondary-300 rounded px-3 py-2 space-y-2 text-lg">
@@ -100,9 +120,7 @@ export default function AddSchedule({ onClose }: Props) {
                   onChange={() => handleExerciseToggle(exercise.id)}
                   className="accent-primary-500"
                 />
-                <span>
-                  {exercise.nome}
-                </span>
+                <span>{exercise.nome}</span>
               </label>
             ))}
           </div>

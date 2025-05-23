@@ -24,7 +24,7 @@ export default function Schede() {
   }, [router]);
 
   return (
-    <div>
+    <div className="overflow-x-hidden">
       <Sidebar />
       <div className="ml-[20%] w-full p-12">
         <div className="w-3/4 border-b-secondary-100 border-b-1">

@@ -40,7 +40,7 @@ export default function Schede() {
   }, []);
 
   return (
-    <div className="">
+    <div className="overflow-x-hidden">
       <Sidebar />
       <div className="ml-[20%] w-full p-12">
         {/* Header con benvenuto */}
