@@ -70,7 +70,6 @@ export default function Schede() {
 
           {showModal && <AddSchedule onClose={() => setShowModal(false)} />}
 
-          <SchedeSelection />
         </div>
       </div>
     </div>
