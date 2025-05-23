@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import {
   collection,
   getDocs,
+  query,
+  where,
   deleteDoc,
   doc,
   updateDoc,
 } from "firebase/firestore";
 import { db } from "@/firebase";
-import { X,Trash, Pencil } from "lucide-react";
+import { X, Trash, Pencil } from "lucide-react";
 import Input from "@/app/ui/input";
 import { getAuth } from "firebase/auth";
 
@@ -18,7 +20,7 @@ type Client = {
   nome: string;
   cognome: string;
   età: number;
-  trainerId: string; 
+  trainerId: string;
   limitazioni?: boolean;
 };
 
@@ -45,17 +47,17 @@ export default function ClientSelection() {
           return;
         }
 
-        const querySnapshot = await getDocs(collection(db, "clients"));
+        // Query per prendere solo i clienti di questo trainer
+        const q = query(collection(db, "clients"), where("trainerId", "==", user.uid));
+        const querySnapshot = await getDocs(q);
 
-        const clientsArray = querySnapshot.docs
-          .map((doc) => {
-            const data = doc.data() as Omit<Client, "id">;
-            return {
-              id: doc.id,
-              ...data,
-            };
-          })
-          .filter((client) => client.trainerId === user.uid); 
+        const clientsArray = querySnapshot.docs.map((doc) => {
+          const data = doc.data() as Omit<Client, "id">;
+          return {
+            id: doc.id,
+            ...data,
+          };
+        });
 
         setClients(clientsArray);
       } catch (error) {
@@ -67,9 +69,7 @@ export default function ClientSelection() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    const confirmDelete = confirm(
-      "Sei sicuro di voler eliminare questo cliente?"
-    );
+    const confirmDelete = confirm("Sei sicuro di voler eliminare questo cliente?");
     if (!confirmDelete) return;
 
     try {
@@ -134,9 +134,7 @@ export default function ClientSelection() {
             <th className="px-6 py-3 text-left text-sm font-bold">Nome</th>
             <th className="px-6 py-3 text-left text-sm font-bold">Cognome</th>
             <th className="px-6 py-3 text-left text-sm font-bold">Età</th>
-            <th className="px-6 py-3 text-left text-sm font-bold">
-              Limitazioni
-            </th>
+            <th className="px-6 py-3 text-left text-sm font-bold">Limitazioni</th>
             <th className="px-6 py-3 text-left text-sm font-bold">Azioni</th>
           </tr>
         </thead>
@@ -146,9 +144,7 @@ export default function ClientSelection() {
               <td className="px-6 py-4 text-sm">{client.nome}</td>
               <td className="px-6 py-4 text-sm">{client.cognome}</td>
               <td className="px-6 py-4 text-sm">{client.età}</td>
-              <td className="px-6 py-4 text-sm">
-                {client.limitazioni ? "SI" : "NO"}
-              </td>
+              <td className="px-6 py-4 text-sm">{client.limitazioni ? "SI" : "NO"}</td>
               <td className="px-6 py-4 text-sm flex gap-2">
                 <button
                   onClick={() => handleEditClick(client)}
@@ -171,7 +167,6 @@ export default function ClientSelection() {
       {modalOpen && (
         <div className="fixed inset-0 bg-secondary-800/30 backdrop-blur-sm flex justify-center items-center z-50">
           <div className="relative bg-white px-6 py-10 border-4 border-primary-500 rounded-sm max-w-sm w-full">
-            {/* Bottone "X" per chiudere */}
             <button
               onClick={() => {
                 setModalOpen(false);
@@ -183,9 +178,7 @@ export default function ClientSelection() {
               <X size={20} />
             </button>
 
-            <h2 className="text-3xl font-semibold mb-6 text-center">
-              Modifica Cliente
-            </h2>
+            <h2 className="text-3xl font-semibold mb-6 text-center">Modifica Cliente</h2>
 
             <div className="space-y-3">
               <Input
@@ -236,7 +229,7 @@ export default function ClientSelection() {
                   setModalOpen(false);
                   setEditingClient(null);
                 }}
-                className="px-4 py-2 bg-gray-200 rounded-sm hover:bg-gray-300 text-base font-semibold transition curosr-pointer"
+                className="px-4 py-2 bg-gray-200 rounded-sm hover:bg-gray-300 text-base font-semibold transition cursor-pointer"
               >
                 Annulla
               </button>
