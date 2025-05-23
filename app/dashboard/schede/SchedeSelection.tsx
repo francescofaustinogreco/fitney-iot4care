@@ -9,7 +9,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "@/firebase";
-import { X, Trash, Pencil } from "lucide-react";
+import { X, Trash, Pencil, User } from "lucide-react";
 import Input from "@/app/ui/input";
 
 export default function SchedeSelection() {
@@ -117,7 +117,7 @@ export default function SchedeSelection() {
   return (
     <div className="mt-4">
       {/* FILTRO */}
-      <div className="mb-6 max-w-xs relative">
+      <div className="mb-6 w-1/5 relative">
         <select
           value={selectedDay}
           onChange={(e) => setSelectedDay(e.target.value)}
@@ -141,7 +141,7 @@ export default function SchedeSelection() {
         </span>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         {schedules
           .filter((s) => selectedDay === "Tutti" || s.day === selectedDay)
           .map((s) => (
@@ -151,50 +151,68 @@ export default function SchedeSelection() {
                 setSelectedSchedule(s);
                 setViewModalOpen(true);
               }}
-              className="cursor-pointer max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700"
+              className="cursor-pointer max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow-sm"
             >
-              <h5 className="mb-2 text-lg font-bold tracking-tight text-gray-900 dark:text-white truncate">
-                {s.clientId}
-              </h5>
-              <p className="mb-1 font-normal text-gray-700 dark:text-gray-400 truncate">
+              <div className="flex items-center gap-2 mb-2">
+                <User className="text-gray-600" size={20} />
+                <h5 className="text-lg font-bold tracking-tight text-gray-900 truncate">
+                  {s.clientId}
+                </h5>
+              </div>
+              <p className="mb-1 font-normal text-gray-700 truncate">
                 {Array.isArray(s.exercises) ? s.exercises.join(", ") : "-"}
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Giorno: {s.day || "-"}
-              </p>
+              <p className="text-sm text-gray-500">Giorno: {s.day || "-"}</p>
             </div>
           ))}
       </div>
 
       {viewModalOpen && selectedSchedule && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50">
-          <div className="relative bg-white p-6 rounded-sm shadow-md border-2 border-primary-500 w-full max-w-md dark:bg-gray-800 dark:border-gray-700">
+          <div className="relative bg-white p-6 rounded-sm shadow-md border-2 border-primary-500 w-full max-w-md">
             <button
               onClick={() => {
                 setViewModalOpen(false);
                 setSelectedSchedule(null);
               }}
-              className="absolute top-3 right-3 text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white cursor-pointer"
+              className="absolute top-3 right-3 cursor-pointer"
             >
               <X size={20} />
             </button>
 
-            <h2 className="text-xl font-semibold text-slate-800 dark:text-white mb-4">
-              Dettagli Scheda
-            </h2>
+            <h2 className="text-3xl font-semibold mb-4">Dettagli Scheda</h2>
 
-            <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-              <strong>Cliente:</strong> {selectedSchedule.clientId}
-            </p>
-            <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-              <strong>Giorno:</strong> {selectedSchedule.day || "-"}
-            </p>
-            <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-              <strong>Esercizi:</strong>{" "}
-              {Array.isArray(selectedSchedule.exercises)
-                ? selectedSchedule.exercises.join(", ")
-                : "-"}
-            </p>
+            <div className="text-md ">
+              <h3 className="text-xl mb-2 font-semibold">
+                {selectedSchedule.clientId}
+              </h3>
+              <p className="mb-2">
+                <strong>Giorno:</strong> {selectedSchedule.day || "-"}
+              </p>
+              <div className="mb-4">
+                <strong>Esercizi:</strong>
+                <ul className="list-disc list-inside mt-1">
+                  {Array.isArray(selectedSchedule.exercises) ? (
+                    selectedSchedule.exercises.map((exId: string, i: number) => {
+                      const esercizio = allExercises.find((e) => e.id === exId);
+                      return (
+                        <li key={i}>
+                          {esercizio
+                            ? `${esercizio.nome} ${
+                                esercizio.ripetizioni
+                                  ? `(${esercizio.ripetizioni})`
+                                  : ""
+                              }`
+                            : exId}
+                        </li>
+                      );
+                    })
+                  ) : (
+                    <li>-</li>
+                  )}
+                </ul>
+              </div>
+            </div>
 
             <div className="flex justify-end gap-4 mt-6">
               <button
@@ -301,7 +319,12 @@ export default function SchedeSelection() {
                         }}
                         className="accent-primary-500"
                       />
-                      <span>{exercise.nome}</span>
+                      <span>
+                        {exercise.nome}{" "}
+                        {exercise.ripetizioni
+                          ? `(${exercise.ripetizioni})`
+                          : ""}
+                      </span>
                     </label>
                   ))}
                 </div>
