@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { collection, addDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { db } from "@/firebase";
 import Input from "../../ui/input";
 import Button from "../../ui/button";
@@ -19,12 +20,21 @@ export default function AddExercise({ onClose }: ExerciseFormModalProps) {
   const [error, setError] = useState<string | null>(null);
 
   const addExerciseLogic = async () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      setError("Utente non loggato.");
+      return;
+    }
+
     try {
       await addDoc(collection(db, "exercises"), {
         nome,
         difficoltà,
         note,
         ripetizioni,
+        userId: user.uid,
       });
       onClose();
     } catch (e: any) {

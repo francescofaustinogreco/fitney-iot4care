@@ -7,7 +7,10 @@ import {
   deleteDoc,
   doc,
   updateDoc,
+  query,
+  where,
 } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { db } from "@/firebase";
 import { X, Trash, Pencil, User } from "lucide-react";
 import Input from "@/app/ui/input";
@@ -19,6 +22,7 @@ export default function SchedeSelection() {
   const [selectedSchedule, setSelectedSchedule] = useState<any | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [allExercises, setAllExercises] = useState<any[]>([]);
+  const [allClients, setAllClients] = useState<any[]>([]);
   const [selectedDay, setSelectedDay] = useState<string>("Tutti");
 
   const [formData, setFormData] = useState({
@@ -29,44 +33,72 @@ export default function SchedeSelection() {
 
   useEffect(() => {
     const fetchSchedules = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "schedules"));
-        const schedulesArray = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setSchedules(schedulesArray);
-      } catch (error) {
-        console.error("Errore nel recupero delle schede:", error);
-      }
+      const user = getAuth().currentUser;
+      if (!user) return;
+
+      const qClient = query(
+        collection(db, "schedules"),
+        where("clientId", "==", user.uid)
+      );
+
+      const qTrainer = query(
+        collection(db, "schedules"),
+        where("trainerId", "==", user.uid)
+      );
+
+      const [clientSnap, trainerSnap] = await Promise.all([
+        getDocs(qClient),
+        getDocs(qTrainer),
+      ]);
+
+      const clientSchedules = clientSnap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      const trainerSchedules = trainerSnap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      const allSchedules = [...clientSchedules, ...trainerSchedules];
+      const uniqueSchedules = Array.from(
+        new Map(allSchedules.map((s) => [s.id, s])).values()
+      );
+
+      setSchedules(uniqueSchedules);
     };
 
     const fetchExercises = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "exercises"));
-        const exercisesArray = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setAllExercises(exercisesArray);
-      } catch (error) {
-        console.error("Errore nel recupero degli esercizi:", error);
-      }
+      const querySnapshot = await getDocs(collection(db, "exercises"));
+      const exercisesArray = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setAllExercises(exercisesArray);
+    };
+
+    const fetchClients = async () => {
+      const clientsSnap = await getDocs(collection(db, "clients"));
+      const clientsArray = clientsSnap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setAllClients(clientsArray);
     };
 
     fetchSchedules();
     fetchExercises();
+    fetchClients();
   }, []);
 
   const handleDelete = async (id: string) => {
-    const confirmDelete = confirm("Vuoi davvero eliminare questa scheda?");
-    if (!confirmDelete) return;
-
+    if (!confirm("Vuoi davvero eliminare questa scheda?")) return;
     try {
       await deleteDoc(doc(db, "schedules", id));
       setSchedules((prev) => prev.filter((s) => s.id !== id));
     } catch (error) {
-      console.error("Errore durante l'eliminazione della scheda:", error);
+      console.error(error);
     }
   };
 
@@ -90,28 +122,46 @@ export default function SchedeSelection() {
     }));
   };
 
+  const toggleExercise = (exerciseId: string) => {
+    setFormData((prev) => {
+      const exists = prev.exercises.includes(exerciseId);
+      return {
+        ...prev,
+        exercises: exists
+          ? prev.exercises.filter((id) => id !== exerciseId)
+          : [...prev.exercises, exerciseId],
+      };
+    });
+  };
+
   const handleSave = async () => {
     if (!editingSchedule) return;
-
     try {
       const docRef = doc(db, "schedules", editingSchedule.id);
-      await updateDoc(docRef, {
-        note: formData.note,
-        day: formData.day,
-        exercises: formData.exercises,
-      });
+      await updateDoc(docRef, formData);
 
       setSchedules((prev) =>
-        prev.map((s) =>
-          s.id === editingSchedule.id ? { ...s, ...formData } : s
-        )
+        prev.map((s) => (s.id === editingSchedule.id ? { ...s, ...formData } : s))
       );
 
       setModalOpen(false);
       setEditingSchedule(null);
     } catch (error) {
-      console.error("Errore durante il salvataggio della scheda:", error);
+      console.error(error);
     }
+  };
+
+  // Funzione per trovare nome + cognome client da clientId
+  const getClientName = (clientId: string) => {
+    const client = allClients.find((c) => c.id === clientId);
+    if (!client) return clientId; // fallback: mostra id se non trovato
+    return `${client.nome} ${client.cognome}`;
+  };
+
+  // Funzione per trovare nome esercizio da id
+  const getExerciseName = (exerciseId: string) => {
+    const exercise = allExercises.find((e) => e.id === exerciseId);
+    return exercise ? exercise.nome : exerciseId;
   };
 
   return (
@@ -123,9 +173,6 @@ export default function SchedeSelection() {
           onChange={(e) => setSelectedDay(e.target.value)}
           className="appearance-none w-full px-4 py-2 pr-10 rounded-xl border-2 border-primary-500 bg-secondary-50 text-primary-500 font-semibold shadow-sm hover:shadow-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-300 cursor-pointer"
         >
-          <option value="" disabled hidden>
-            Giorno della settimana
-          </option>
           <option value="Tutti">Tutti</option>
           <option value="Lunedì">Lunedì</option>
           <option value="Martedì">Martedì</option>
@@ -135,13 +182,12 @@ export default function SchedeSelection() {
           <option value="Sabato">Sabato</option>
           <option value="Domenica">Domenica</option>
         </select>
-
         <span className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 text-primary-500 text-lg">
           ▼
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {schedules
           .filter((s) => selectedDay === "Tutti" || s.day === selectedDay)
           .map((s) => (
@@ -151,22 +197,20 @@ export default function SchedeSelection() {
                 setSelectedSchedule(s);
                 setViewModalOpen(true);
               }}
-              className="cursor-pointer max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow-sm"
+              className="cursor-pointer w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm h"
             >
               <div className="flex items-center gap-2 mb-2">
                 <User className="text-gray-600" size={20} />
                 <h5 className="text-lg font-bold tracking-tight text-gray-900 truncate">
-                  {s.clientId}
+                  {getClientName(s.clientId)}
                 </h5>
               </div>
-              <p className="mb-1 font-normal text-gray-700 truncate">
-                {Array.isArray(s.exercises) ? s.exercises.join(", ") : "-"}
-              </p>
               <p className="text-sm text-gray-500">Giorno: {s.day || "-"}</p>
             </div>
           ))}
       </div>
 
+      {/* Modal dettaglio scheda */}
       {viewModalOpen && selectedSchedule && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50">
           <div className="relative bg-white p-6 rounded-sm shadow-md border-2 border-primary-500 w-full max-w-md">
@@ -182,9 +226,9 @@ export default function SchedeSelection() {
 
             <h2 className="text-3xl font-semibold mb-4">Dettagli Scheda</h2>
 
-            <div className="text-md ">
+            <div className="text-md">
               <h3 className="text-xl mb-2 font-semibold">
-                {selectedSchedule.clientId}
+                {getClientName(selectedSchedule.clientId)}
               </h3>
               <p className="mb-2">
                 <strong>Giorno:</strong> {selectedSchedule.day || "-"}
@@ -199,9 +243,7 @@ export default function SchedeSelection() {
                         <li key={i}>
                           {esercizio
                             ? `${esercizio.nome} ${
-                                esercizio.ripetizioni
-                                  ? `(${esercizio.ripetizioni})`
-                                  : ""
+                                esercizio.ripetizioni ? `(${esercizio.ripetizioni})` : ""
                               }`
                             : exId}
                         </li>
@@ -241,109 +283,83 @@ export default function SchedeSelection() {
         </div>
       )}
 
-      {modalOpen && (
-        <div className="fixed inset-0 bg-secondary-800/30 backdrop-blur-sm flex justify-center items-center z-50">
-          <div className="relative bg-white px-6 py-10 border-4 border-primary-500 rounded-sm max-w-sm w-full">
+      {/* Modal modifica scheda */}
+      {modalOpen && editingSchedule && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50">
+          <div className="relative bg-white p-6 rounded-sm shadow-md border-2 border-primary-500 w-full max-w-md max-h-[90vh] overflow-auto">
             <button
               onClick={() => {
                 setModalOpen(false);
                 setEditingSchedule(null);
               }}
-              className="absolute top-3 right-3 text-secondary-500 hover:text-secondary-800 cursor-pointer"
-              aria-label="Chiudi"
+              className="absolute top-3 right-3 cursor-pointer"
             >
               <X size={20} />
             </button>
 
-            <h2 className="text-3xl font-semibold mb-6 text-center">
-              Modifica Scheda
-            </h2>
+            <h2 className="text-3xl font-semibold mb-4">Modifica Scheda</h2>
 
-            <div className="space-y-3">
+            <label className="block mb-2 font-semibold">
+              Note
               <Input
                 type="text"
                 name="note"
                 value={formData.note}
-                onChange={handleFormChange}
-                placeholder="Note"
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, note: e.target.value }))
+                }
+                className="w-full"
               />
+            </label>
 
-              <div>
-                <label className="text-sm font-medium text-secondary-700">
-                  Giorno della settimana
-                </label>
-                <select
-                  name="day"
-                  value={formData.day}
-                  onChange={handleFormChange}
-                  className="appearance-none h-[48px] w-full px-3 text-base border border-secondary-300 rounded-sm bg-secondary-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                >
-                  <option value="">-- Seleziona --</option>
-                  <option value="Lunedì">Lunedì</option>
-                  <option value="Martedì">Martedì</option>
-                  <option value="Mercoledì">Mercoledì</option>
-                  <option value="Giovedì">Giovedì</option>
-                  <option value="Venerdì">Venerdì</option>
-                  <option value="Sabato">Sabato</option>
-                  <option value="Domenica">Domenica</option>
-                </select>
-              </div>
+            <label className="block mb-4 font-semibold">
+              Giorno
+              <select
+                name="day"
+                value={formData.day}
+                onChange={handleFormChange}
+                className="w-full rounded border px-3 py-2"
+              >
+                <option value="">Seleziona giorno</option>
+                <option value="Lunedì">Lunedì</option>
+                <option value="Martedì">Martedì</option>
+                <option value="Mercoledì">Mercoledì</option>
+                <option value="Giovedì">Giovedì</option>
+                <option value="Venerdì">Venerdì</option>
+                <option value="Sabato">Sabato</option>
+                <option value="Domenica">Domenica</option>
+              </select>
+            </label>
 
-              <div>
-                <label className="text-sm font-medium text-secondary-700">
-                  Esercizi
-                </label>
-                <div className="max-h-40 overflow-y-auto border bg-secondary-50 border-secondary-300 rounded px-3 py-2 space-y-2 text-base">
-                  {allExercises.map((exercise) => (
-                    <label
-                      key={exercise.id}
-                      className="flex items-center space-x-2"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.exercises.includes(exercise.id)}
-                        onChange={() => {
-                          setFormData((prev) => {
-                            const isSelected = prev.exercises.includes(
-                              exercise.id
-                            );
-                            return {
-                              ...prev,
-                              exercises: isSelected
-                                ? prev.exercises.filter(
-                                    (id) => id !== exercise.id
-                                  )
-                                : [...prev.exercises, exercise.id],
-                            };
-                          });
-                        }}
-                        className="accent-primary-500"
-                      />
-                      <span>
-                        {exercise.nome}{" "}
-                        {exercise.ripetizioni
-                          ? `(${exercise.ripetizioni})`
-                          : ""}
-                      </span>
-                    </label>
-                  ))}
-                </div>
+            <div className="mb-4">
+              <strong>Esercizi</strong>
+              <div className="max-h-60 overflow-auto border rounded p-2">
+                {allExercises.map((ex) => (
+                  <label key={ex.id} className="flex items-center gap-2 mb-1">
+                    <input
+                      type="checkbox"
+                      checked={formData.exercises.includes(ex.id)}
+                      onChange={() => toggleExercise(ex.id)}
+                    />
+                    {ex.nome}
+                  </label>
+                ))}
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end space-x-4">
+            <div className="flex justify-end gap-4 mt-6">
               <button
                 onClick={() => {
                   setModalOpen(false);
                   setEditingSchedule(null);
                 }}
-                className="px-4 py-2 bg-gray-200 rounded-sm hover:bg-gray-300 text-base font-semibold transition cursor-pointer"
+                className="text-sm font-medium"
               >
                 Annulla
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-primary-500 text-white rounded-sm hover:bg-primary-600 text-base font-semibold transition cursor-pointer"
+                className="text-sm bg-primary-500 text-white rounded px-4 py-2"
               >
                 Salva
               </button>
