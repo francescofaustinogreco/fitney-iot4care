@@ -18,6 +18,7 @@ import { getAuth } from "firebase/auth";
 type Exercise = {
   id: string;
   nome: string;
+  ripetizioni: string;
   difficoltà: string;
   note: string;
   userId: string;
@@ -30,6 +31,7 @@ export default function ExerciseSelection() {
 
   const [formData, setFormData] = useState({
     nome: "",
+    ripetizioni: "",
     difficoltà: "",
     note: "",
   });
@@ -69,7 +71,9 @@ export default function ExerciseSelection() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    const confirmDelete = confirm("Sei sicuro di voler eliminare questo esercizio?");
+    const confirmDelete = confirm(
+      "Sei sicuro di voler eliminare questo esercizio?"
+    );
     if (!confirmDelete) return;
 
     try {
@@ -84,6 +88,7 @@ export default function ExerciseSelection() {
     setEditingExercise(exercise);
     setFormData({
       nome: exercise.nome,
+      ripetizioni: exercise.ripetizioni,
       difficoltà: exercise.difficoltà,
       note: exercise.note,
     });
@@ -105,6 +110,7 @@ export default function ExerciseSelection() {
       const docRef = doc(db, "exercises", editingExercise.id);
       await updateDoc(docRef, {
         nome: formData.nome,
+        ripetizioni: formData.ripetizioni,
         difficoltà: formData.difficoltà,
         note: formData.note,
       });
@@ -128,7 +134,12 @@ export default function ExerciseSelection() {
         <thead className="bg-secondary-100">
           <tr>
             <th className="px-6 py-3 text-left text-sm font-bold">Nome</th>
-            <th className="px-6 py-3 text-left text-sm font-bold">Difficoltà</th>
+            <th className="px-6 py-3 text-left text-sm font-bold">
+              Ripetizioni
+            </th>
+            <th className="px-6 py-3 text-left text-sm font-bold">
+              Difficoltà
+            </th>
             <th className="px-6 py-3 text-left text-sm font-bold">Note</th>
             <th className="px-6 py-3 text-left text-sm font-bold">Azioni</th>
           </tr>
@@ -137,6 +148,7 @@ export default function ExerciseSelection() {
           {exercises.map((ex) => (
             <tr key={ex.id} className="hover:bg-secondary-50 transition">
               <td className="px-6 py-4 text-sm">{ex.nome}</td>
+              <td className="px-6 py-4 text-sm">{ex.ripetizioni}</td>
               <td className="px-6 py-4 text-sm">{ex.difficoltà}</td>
               <td className="px-6 py-4 text-sm">{ex.note}</td>
               <td className="px-6 py-4 text-sm flex gap-2">
@@ -172,7 +184,9 @@ export default function ExerciseSelection() {
               <X size={20} />
             </button>
 
-            <h2 className="text-3xl font-semibold mb-6 text-center">Modifica Esercizio</h2>
+            <h2 className="text-3xl font-semibold mb-6 text-center">
+              Modifica Esercizio
+            </h2>
 
             <div className="space-y-3">
               <Input
@@ -181,6 +195,14 @@ export default function ExerciseSelection() {
                 value={formData.nome}
                 onChange={handleFormChange}
                 placeholder="Nome"
+                required
+              />
+              <Input
+                type="text"
+                name="ripetizioni"
+                value={formData.ripetizioni}
+                onChange={handleFormChange}
+                placeholder="Ripetizioni"
                 required
               />
               <Input
@@ -212,7 +234,7 @@ export default function ExerciseSelection() {
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-primary-500 text-white rounded-sm hover:bg-primary-600 text-base font-semibold transition"
+                className="px-4 py-2 bg-primary-500 text-white rounded-sm hover:bg-primary-600 text-base font-semibold transition cursor-pointer"
               >
                 Salva
               </button>

@@ -118,7 +118,7 @@ export default function AddSchedule({ onClose }: Props) {
           <select
             value={selectedClient}
             onChange={e => setSelectedClient(e.target.value)}
-            className="appearance-none h-[54px] px-4 pr-10 w-full border text-lg bg-secondary-50 border-secondary-300 placeholder-secondary-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-150"
+            className="cursor-pointer appearance-none h-[54px] px-4 pr-10 w-full border text-lg bg-secondary-50 border-secondary-300 placeholder-secondary-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-150"
           >
             <option value="">-- Seleziona --</option>
             {clients.map(client => (
@@ -132,7 +132,7 @@ export default function AddSchedule({ onClose }: Props) {
           <select
             value={day}
             onChange={e => setDay(e.target.value)}
-            className="appearance-none h-[54px] px-4 pr-10 w-full border text-lg bg-secondary-50 border-secondary-300 placeholder-secondary-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-150"
+            className="cursor-pointer appearance-none h-[54px] px-4 pr-10 w-full border text-lg bg-secondary-50 border-secondary-300 placeholder-secondary-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-150"
           >
             <option value="">-- Seleziona --</option>
             <option value="Lunedì">Lunedì</option>

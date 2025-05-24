@@ -141,7 +141,9 @@ export default function SchedeSelection() {
       await updateDoc(docRef, formData);
 
       setSchedules((prev) =>
-        prev.map((s) => (s.id === editingSchedule.id ? { ...s, ...formData } : s))
+        prev.map((s) =>
+          s.id === editingSchedule.id ? { ...s, ...formData } : s
+        )
       );
 
       setModalOpen(false);
@@ -237,18 +239,24 @@ export default function SchedeSelection() {
                 <strong>Esercizi:</strong>
                 <ul className="list-disc list-inside mt-1">
                   {Array.isArray(selectedSchedule.exercises) ? (
-                    selectedSchedule.exercises.map((exId: string, i: number) => {
-                      const esercizio = allExercises.find((e) => e.id === exId);
-                      return (
-                        <li key={i}>
-                          {esercizio
-                            ? `${esercizio.nome} ${
-                                esercizio.ripetizioni ? `(${esercizio.ripetizioni})` : ""
-                              }`
-                            : exId}
-                        </li>
-                      );
-                    })
+                    selectedSchedule.exercises.map(
+                      (exId: string, i: number) => {
+                        const esercizio = allExercises.find(
+                          (e) => e.id === exId
+                        );
+                        return (
+                          <li key={i}>
+                            {esercizio
+                              ? `${esercizio.nome} ${
+                                  esercizio.ripetizioni
+                                    ? `(${esercizio.ripetizioni})`
+                                    : ""
+                                }`
+                              : exId}
+                          </li>
+                        );
+                      }
+                    )
                   ) : (
                     <li>-</li>
                   )}
@@ -285,42 +293,34 @@ export default function SchedeSelection() {
 
       {/* Modal modifica scheda */}
       {modalOpen && editingSchedule && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50">
-          <div className="relative bg-white p-6 rounded-sm shadow-md border-2 border-primary-500 w-full max-w-md max-h-[90vh] overflow-auto">
+        <div className="fixed inset-0 bg-secondary-800/30 backdrop-blur-sm flex justify-center items-center z-50">
+          <div className="relative bg-white px-6 py-10 border-4 border-primary-500 rounded-sm max-w-sm w-full">
             <button
               onClick={() => {
                 setModalOpen(false);
                 setEditingSchedule(null);
               }}
-              className="absolute top-3 right-3 cursor-pointer"
+              className="absolute top-3 right-3 text-secondary-500 hover:text-secondary-800 cursor-pointer"
+              aria-label="Chiudi"
             >
               <X size={20} />
             </button>
 
-            <h2 className="text-3xl font-semibold mb-4">Modifica Scheda</h2>
+            <h2 className="text-3xl font-semibold mb-6 text-center">
+              Modifica Scheda
+            </h2>
 
-            <label className="block mb-2 font-semibold">
-              Note
-              <Input
-                type="text"
-                name="note"
-                value={formData.note}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, note: e.target.value }))
-                }
-                className="w-full"
-              />
-            </label>
-
-            <label className="block mb-4 font-semibold">
-              Giorno
+            <div className="space-y-4">
+              <label className="text-sm font-medium text-secondary-700">
+                Giorno della settimana
+              </label>
               <select
                 name="day"
                 value={formData.day}
                 onChange={handleFormChange}
-                className="w-full rounded border px-3 py-2"
+                className="cursor-pointer appearance-none h-[54px] px-4 pr-10 w-full border text-lg bg-secondary-50 border-secondary-300 placeholder-secondary-400 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-150"
               >
-                <option value="">Seleziona giorno</option>
+                <option value="">-- Seleziona --</option>
                 <option value="Lunedì">Lunedì</option>
                 <option value="Martedì">Martedì</option>
                 <option value="Mercoledì">Mercoledì</option>
@@ -329,40 +329,52 @@ export default function SchedeSelection() {
                 <option value="Sabato">Sabato</option>
                 <option value="Domenica">Domenica</option>
               </select>
-            </label>
 
-            <div className="mb-4">
-              <strong>Esercizi</strong>
-              <div className="max-h-60 overflow-auto border rounded p-2">
-                {allExercises.map((ex) => (
-                  <label key={ex.id} className="flex items-center gap-2 mb-1">
+              <label className="text-sm font-medium text-secondary-700">
+                Note
+              </label>
+              <Input
+                type="text"
+                name="note"
+                value={formData.note}
+                onChange={(e:any) =>
+                  setFormData((prev) => ({ ...prev, note: e.target.value }))
+                }
+                placeholder="Note"
+              />
+
+              <label className="text-sm font-medium text-secondary-700">
+                Esercizi
+              </label>
+              <div className="max-h-40 overflow-y-auto border bg-secondary-50 border-secondary-300 rounded px-3 py-2 space-y-2 text-lg">
+                {allExercises.map((exercise) => (
+                  <label
+                    key={exercise.id}
+                    className="flex items-center space-x-2"
+                  >
                     <input
                       type="checkbox"
-                      checked={formData.exercises.includes(ex.id)}
-                      onChange={() => toggleExercise(ex.id)}
+                      checked={formData.exercises.includes(exercise.id)}
+                      onChange={() => toggleExercise(exercise.id)}
+                      className="accent-primary-500"
                     />
-                    {ex.nome}
+                    <span>{exercise.nome} ({exercise.ripetizioni})</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            <div className="flex justify-end gap-4 mt-6">
+            <div className="mt-6 flex justify-end space-x-4">
               <button
                 onClick={() => {
                   setModalOpen(false);
                   setEditingSchedule(null);
                 }}
-                className="text-sm font-medium"
+                className="px-4 py-2 bg-gray-200 rounded-sm hover:bg-gray-300 text-base font-semibold transition cursor-pointer"
               >
                 Annulla
               </button>
-              <button
-                onClick={handleSave}
-                className="text-sm bg-primary-500 text-white rounded px-4 py-2"
-              >
-                Salva
-              </button>
+              <button onClick={handleSave} className="px-4 py-2 bg-primary-500 text-white rounded-sm hover:bg-primary-600 text-base font-semibold transition cursor-pointer">Salva</button>
             </div>
           </div>
         </div>

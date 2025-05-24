@@ -82,14 +82,14 @@ export default function AddClient({ onClose }: ClientFormModalProps) {
             required
           />
 
-          <label className="flex items-center space-x-2 text-sm">
+          <label className="flex items-center space-x-2 cursor-pointer">
             <input
               type="checkbox"
               checked={limitazioni}
               onChange={(e) => setLimitazioni(e.target.checked)}
               className="accent-primary-500"
             />
-            <span>Limitazioni fisiche?</span>
+            <span className="text-lg">Limitazioni fisiche?</span>
           </label>
 
           {error && <p className="text-red-500 text-sm">{error}</p>}

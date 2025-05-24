@@ -206,7 +206,7 @@ export default function ClientSelection() {
                 required
               />
 
-              <label className="flex items-center space-x-2 text-sm">
+              <label className="flex items-center space-x-2 text-sm cursor-pointer">
                 <input
                   type="checkbox"
                   name="limitazioni"
@@ -219,7 +219,7 @@ export default function ClientSelection() {
                   }
                   className="accent-primary-500"
                 />
-                <span>Limitazioni fisiche?</span>
+                <span className="text-lg">Limitazioni fisiche?</span>
               </label>
             </div>
 
@@ -235,7 +235,7 @@ export default function ClientSelection() {
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-primary-500 text-white rounded-sm hover:bg-primary-600 text-base font-semibold transition"
+                className="px-4 py-2 bg-primary-500 text-white rounded-sm hover:bg-primary-600 text-base font-semibold transition cursor-pointer"
               >
                 Salva
               </button>
