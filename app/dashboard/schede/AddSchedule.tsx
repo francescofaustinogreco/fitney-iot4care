@@ -22,7 +22,6 @@ export default function AddSchedule({ onClose }: Props) {
   const [note, setNote] = useState("");
   const [day, setDay] = useState("");
 
-  // Prendi l'utente autenticato
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -30,7 +29,6 @@ export default function AddSchedule({ onClose }: Props) {
     return () => unsubscribe();
   }, []);
 
-  // Carica gli esercizi associati all'utente autenticato
   useEffect(() => {
     if (!user) return;
 
@@ -50,7 +48,6 @@ export default function AddSchedule({ onClose }: Props) {
     fetchExercises();
   }, [user]);
 
-  // Carica i clienti associati al personal trainer autenticato
   useEffect(() => {
     if (!user) return;
 

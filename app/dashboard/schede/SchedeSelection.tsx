@@ -153,14 +153,13 @@ export default function SchedeSelection() {
     }
   };
 
-  // Funzione per trovare nome + cognome client da clientId
+
   const getClientName = (clientId: string) => {
     const client = allClients.find((c) => c.id === clientId);
     if (!client) return clientId; // fallback: mostra id se non trovato
     return `${client.nome} ${client.cognome}`;
   };
 
-  // Funzione per trovare nome esercizio da id
   const getExerciseName = (exerciseId: string) => {
     const exercise = allExercises.find((e) => e.id === exerciseId);
     return exercise ? exercise.nome : exerciseId;

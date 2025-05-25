@@ -47,7 +47,6 @@ export default function ClientSelection() {
           return;
         }
 
-        // Query per prendere solo i clienti di questo trainer
         const q = query(collection(db, "clients"), where("trainerId", "==", user.uid));
         const querySnapshot = await getDocs(q);
 

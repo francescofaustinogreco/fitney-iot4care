@@ -21,11 +21,10 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      // 1. Crea l'utente in Firebase Auth
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Salva name e surname nel DB in /users/{uid}/users-fitney/profile
       const profileDocRef = doc(db, "users", user.uid, "users-fitney", "profile");
       await setDoc(profileDocRef, {
         name,

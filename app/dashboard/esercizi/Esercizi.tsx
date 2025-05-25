@@ -19,7 +19,7 @@ export default function Schede() {
       }
     });
 
-    return () => unsub(); // Pulisco il listener
+    return () => unsub();
   }, [router]);
 
   return (

@@ -17,7 +17,6 @@ export default function Schede() {
 
   const router = useRouter();
 
-  // Redirect se non autenticato
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (!user) {
@@ -28,7 +27,6 @@ export default function Schede() {
     return () => unsub();
   }, [router]);
 
-  // Recupero nome utente
   useEffect(() => {
     getUserName()
       .then((userName) => setNome(userName))
