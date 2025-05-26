@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db } from "@/firebase";
-import { X, Trash, Pencil, User } from "lucide-react";
+import { X, Trash, Pencil, User, Search } from "lucide-react";
 import Input from "@/app/ui/input";
 
 export default function SchedeSelection() {
@@ -24,6 +24,7 @@ export default function SchedeSelection() {
   const [allExercises, setAllExercises] = useState<any[]>([]);
   const [allClients, setAllClients] = useState<any[]>([]);
   const [selectedDay, setSelectedDay] = useState<string>("Tutti");
+  const [searchName, setSearchName] = useState("");
 
   const [formData, setFormData] = useState({
     note: "",
@@ -79,7 +80,15 @@ export default function SchedeSelection() {
     };
 
     const fetchClients = async () => {
-      const clientsSnap = await getDocs(collection(db, "clients"));
+      const user = getAuth().currentUser;
+      if (!user) return;
+
+      const q = query(
+        collection(db, "clients"),
+        where("trainerId", "==", user.uid)
+      );
+
+      const clientsSnap = await getDocs(q);
       const clientsArray = clientsSnap.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -153,11 +162,9 @@ export default function SchedeSelection() {
     }
   };
 
-
   const getClientName = (clientId: string) => {
     const client = allClients.find((c) => c.id === clientId);
-    if (!client) return clientId; // fallback: mostra id se non trovato
-    return `${client.nome} ${client.cognome}`;
+    return client ? `${client.nome} ${client.cognome}` : clientId;
   };
 
   const getExerciseName = (exerciseId: string) => {
@@ -165,50 +172,75 @@ export default function SchedeSelection() {
     return exercise ? exercise.nome : exerciseId;
   };
 
+  const filteredSchedules = schedules.filter((s) => {
+    const client = allClients.find((c) => c.id === s.clientId);
+    if (!client) return false; // se non ha ancora caricato il client, escludi
+
+    const fullName = `${client.nome} ${client.cognome}`.toLowerCase();
+    const matchesDay = selectedDay === "Tutti" || s.day === selectedDay;
+    const matchesName = fullName.includes(searchName.toLowerCase());
+
+    return matchesDay && matchesName;
+  });
+
   return (
     <div className="mt-4">
       {/* FILTRO */}
-      <div className="mb-6 w-1/5 relative">
-        <select
-          value={selectedDay}
-          onChange={(e) => setSelectedDay(e.target.value)}
-          className="appearance-none w-full px-4 py-2 pr-10 rounded-xl border-2 border-primary-500 bg-secondary-50 text-primary-500 font-semibold shadow-sm hover:shadow-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-300 cursor-pointer"
-        >
-          <option value="Tutti">Tutti</option>
-          <option value="Lunedì">Lunedì</option>
-          <option value="Martedì">Martedì</option>
-          <option value="Mercoledì">Mercoledì</option>
-          <option value="Giovedì">Giovedì</option>
-          <option value="Venerdì">Venerdì</option>
-          <option value="Sabato">Sabato</option>
-          <option value="Domenica">Domenica</option>
-        </select>
-        <span className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 text-primary-500 text-lg">
-          ▼
-        </span>
+      <div className="w-2/4 flex items-cente mb-6">
+        <div className="relative flex-grow">
+          <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+            <Search size={20} className="text-primary-500" />
+          </div>
+          <input
+            type="search"
+            id="default-search"
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+            className="block w-full h-full pl-10 pr-4 text-md text-secondary-500 border-2 border-primary-500 rounded-xl bg-secondary-50 font-semibold shadow-sm hover:shadow-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-300"
+            placeholder="Cerca cliente..."
+            required
+          />
+        </div>
+        <div className="ml-4 relative">
+          <select
+            value={selectedDay}
+            onChange={(e) => setSelectedDay(e.target.value)}
+            className="appearance-none w-full h-12 px-4 pr-10 rounded-xl border-2 border-primary-500 bg-secondary-50 text-primary-700 font-semibold shadow-sm hover:shadow-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-300 cursor-pointer"
+          >
+            <option value="Tutti">Tutti</option>
+            <option value="Lunedì">Lunedì</option>
+            <option value="Martedì">Martedì</option>
+            <option value="Mercoledì">Mercoledì</option>
+            <option value="Giovedì">Giovedì</option>
+            <option value="Venerdì">Venerdì</option>
+            <option value="Sabato">Sabato</option>
+            <option value="Domenica">Domenica</option>
+          </select>
+          <span className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 text-primary-500 text-lg">
+            ▼
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {schedules
-          .filter((s) => selectedDay === "Tutti" || s.day === selectedDay)
-          .map((s) => (
-            <div
-              key={s.id}
-              onClick={() => {
-                setSelectedSchedule(s);
-                setViewModalOpen(true);
-              }}
-              className="cursor-pointer w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm h"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <User className="text-gray-600" size={20} />
-                <h5 className="text-lg font-bold tracking-tight text-gray-900 truncate">
-                  {getClientName(s.clientId)}
-                </h5>
-              </div>
-              <p className="text-sm text-gray-500">Giorno: {s.day || "-"}</p>
+        {filteredSchedules.map((s) => (
+          <div
+            key={s.id}
+            onClick={() => {
+              setSelectedSchedule(s);
+              setViewModalOpen(true);
+            }}
+            className="cursor-pointer w-full p-6 bg-white border border-gray-200 rounded-lg shadow-sm"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <User className="text-gray-600" size={20} />
+              <h5 className="text-lg font-bold tracking-tight text-gray-900 truncate">
+                {getClientName(s.clientId)}
+              </h5>
             </div>
-          ))}
+            <p className="text-sm text-gray-500">Giorno: {s.day || "-"}</p>
+          </div>
+        ))}
       </div>
 
       {/* Modal dettaglio scheda */}
@@ -336,7 +368,7 @@ export default function SchedeSelection() {
                 type="text"
                 name="note"
                 value={formData.note}
-                onChange={(e:any) =>
+                onChange={(e: any) =>
                   setFormData((prev) => ({ ...prev, note: e.target.value }))
                 }
                 placeholder="Note"
@@ -357,7 +389,9 @@ export default function SchedeSelection() {
                       onChange={() => toggleExercise(exercise.id)}
                       className="accent-primary-500"
                     />
-                    <span>{exercise.nome} ({exercise.ripetizioni})</span>
+                    <span>
+                      {exercise.nome} ({exercise.ripetizioni})
+                    </span>
                   </label>
                 ))}
               </div>
@@ -373,7 +407,12 @@ export default function SchedeSelection() {
               >
                 Annulla
               </button>
-              <button onClick={handleSave} className="px-4 py-2 bg-primary-500 text-white rounded-sm hover:bg-primary-600 text-base font-semibold transition cursor-pointer">Salva</button>
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 bg-primary-500 text-white rounded-sm hover:bg-primary-600 text-base font-semibold transition cursor-pointer"
+              >
+                Salva
+              </button>
             </div>
           </div>
         </div>
